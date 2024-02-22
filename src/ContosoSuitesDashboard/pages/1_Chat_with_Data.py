@@ -22,31 +22,64 @@ def create_chat_completion(deployment_name, messages, endpoint, key, index_name)
     # Create an Azure OpenAI client. We create it in here because each exercise will
     # require at a minimum different base URLs.
 
-    #client = openai.AzureOpenAI(
-    #    base_url=f"{aoai_endpoint}/openai/deployments/{deployment_name}/extensions/",
+    client = openai.AzureOpenAI(
+        base_url=f"{aoai_endpoint}/openai/deployments/{deployment_name}/extensions/",
+        api_key=aoai_api_key,
+        api_version="2023-12-01-preview"
+        
+
     #    TODO: fill in rest of parameters
-    #)
+    )
     
     # Create and return a new chat completion request
     # Be sure to include the "extra_body" parameter to use Azure AI Search as the data source
 
-    #return client.chat.completions.create(
-    #    model=deployment_name,
-    #    messages=[
-    #        {"role": m["role"], "content": m["content"]}
-    #        for m in messages
-    #    ],
-    #    stream=True,
+    return client.chat.completions.create(
+        model=deployment_name,
+        messages=[
+            {"role": m["role"], "content": m["content"]}
+            for m in messages
+        ],
+        stream=True,
+        extra_body={
+            "dataSources": [
+                {
+                    "type": "AzureCognitiveSearch",
+                    "parameters": {
+                        "endpoint": endpoint,
+                        "key": key,
+                        "indexName": index_name,
+                    }
+                }
+            ]
+        }
+    )    
     #    TODO: fill in rest of function call
     #)
     
-    raise NotImplementedError
+    #raise NotImplementedError
 
 def handle_chat_prompt(prompt):
+    # Echo the user's prompt to the chat window
+    
+    
     # Echo the user's prompt to the chat window
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+
+    # Send the user's prompt to Azure OpenAI and display the response
+    # The call to Azure OpenAI is handled in create_chat_completion()
+    # This function loops through the responses and displays them as they come in.
+    # It also appends the full response to the chat history.
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        for response in create_chat_completion(deployment_name, st.session_state.messages, config["SearchEndpoint"], config["SearchKey"], config["SearchIndex"]):
+            full_response += (response.choices[0].delta.content or "")
+            message_placeholder.markdown(full_response + "▌")
+        message_placeholder.markdown(full_response)
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
     # Send the user's prompt to Azure OpenAI and display the response
     # The call to Azure OpenAI is handled in create_chat_completion()
@@ -59,7 +92,7 @@ def handle_chat_prompt(prompt):
     #    for response in ... TODO: finish call
     #st.session_state.messages.append({"role": "assistant", "content": full_response})
     
-    raise NotImplementedError
+    #raise NotImplementedError
 
 ### Exercise 03: Function calls
 def get_customers(search_criterion, search_value):
