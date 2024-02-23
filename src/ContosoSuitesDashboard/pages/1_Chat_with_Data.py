@@ -96,8 +96,7 @@ def handle_chat_prompt(prompt):
 
 ### Exercise 03: Function calls
 def get_customers(search_criterion, search_value):
-    # Set up the API request
-    full_server_url = f"https://potential-space-fishstick-pgxx4ggx4rrhr5v7-5292.app.github.dev/Customer/?searchCriterion={search_criterion}&searchValue={search_value}"
+    full_server_url = f"http://localhost:5292/Customer/?searchCriterion={search_criterion}&searchValue={search_value}"
     r = requests.get(
         full_server_url,
         headers={"Content-Type": "application/json"}
@@ -105,8 +104,7 @@ def get_customers(search_criterion, search_value):
     if r.status_code == 200:
         json_answer = pd.read_json(r.content.decode("utf-8"))
         st.write(json_answer)
-        return st.write(pd.read_json(r.content.decode("utf-8")))
-        return f"Success! Found {len(json_answer)} customers with {search_criterion} {search_value}."    
+        return f"Success! Found {len(json_answer)} customers with {search_criterion} {search_value}."
     else:
         return f"Failure to find any customers with {search_criterion} {search_value}."
 
