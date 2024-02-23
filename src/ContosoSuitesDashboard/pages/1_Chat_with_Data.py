@@ -97,19 +97,34 @@ def handle_chat_prompt(prompt):
 ### Exercise 03: Function calls
 def get_customers(search_criterion, search_value):
     # Set up the API request
-    full_server_url = f"TODO: fill this in"
+    full_server_url = f"https://potential-space-fishstick-pgxx4ggx4rrhr5v7-5292.app.github.dev/Customer/?searchCriterion={search_criterion}&searchValue={search_value}"
     r = requests.get(
         full_server_url,
         headers={"Content-Type": "application/json"}
     )
     if r.status_code == 200:
+        json_answer = pd.read_json(r.content.decode("utf-8"))
+        st.write(json_answer)
         return st.write(pd.read_json(r.content.decode("utf-8")))
+        return f"Success! Found {len(json_answer)} customers with {search_criterion} {search_value}."    
     else:
         return f"Failure to find any customers with {search_criterion} {search_value}."
 
 # TODO: fill in the function call definition
 functions = [
-]
+      {
+          "name": "get_customers",
+          "description": "Get a list of customers based on some search criterion.",
+          "parameters": {
+              "type": "object",
+              "properties": {
+                  "search_criterion": {"type": "string", "enum": ["CustomerName", "LoyaltyTier", "DateOfMostRecentStay"]},
+                  "search_value": {"type": "string"},
+              },
+              "required": ["search_criterion", "search_value"],
+          },
+      }
+  ]
 
 available_functions = {
     "get_customers": get_customers,
@@ -119,22 +134,24 @@ def create_chat_completion_with_functions(deployment_name, messages):
     # Create an Azure OpenAI client. We create it in here because each exercise will
     # require at a minimum different base URLs.
     
-    #client = openai.AzureOpenAI(
-    #    base_url=f"{aoai_endpoint}/openai/deployments/{deployment_name}/",
-    #    TODO: fill in rest of parameters
-    #)
+    client = openai.AzureOpenAI(
+        base_url=f"{aoai_endpoint}/openai/deployments/{deployment_name}/",
+        api_key=aoai_api_key,
+        api_version="2023-12-01-preview"
+    )
     
     # Create and return a new chat completion request
     # Be sure to include the "functions" parameter and set "function_call"
 
-    #return client.chat.completions.create(
-    #    model=deployment_name,
-    #    messages=[
-    #        {"role": m["role"], "content": m["content"]}
-    #        for m in messages
-    #    ],
-    #    TODO: fill in rest of function call
-    #)
+    return client.chat.completions.create(
+        model=deployment_name,
+        messages=[
+            {"role": m["role"], "content": m["content"]}
+            for m in messages
+        ],
+        functions=functions,
+        function_call="auto",
+    )
     
     raise NotImplementedError
 
@@ -149,30 +166,31 @@ def handle_chat_prompt_with_functions(prompt):
     # This function loops through the responses and displays them as they come in.
     # It also appends the full response to the chat history.
 
-    #with st.chat_message("assistant"):
-    #    message_placeholder = st.empty()
-    #    full_response = ""
-    #    response = TODO: finish call and extract message as response_message
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
+        response = create_chat_completion_with_functions(deployment_name, st.session_state.messages)
+        response_message = response.choices[0].message
     #
     #    # Check if GPT returned a function call
-    #    if response_message.function_call:
+        if response_message.function_call:
     #        # Get the function name and arguments
-    #        TODO: fill in code
+           function_name = response_message.function_call.name
     #
     #        # Verify the function
-    #        if function_name not in available_functions:
-    #            full_response = f"Sorry, I don't know how to call the function `{function_name}`."
-    #        else:
-    #            function_to_call = available_functions[function_name]
+           if function_name not in available_functions:
+               full_response = f"Sorry, I don't know how to call the function `{function_name}`."
+           else:
+                function_to_call = available_functions[function_name]
     #            # Verify the function has the correct number of arguments
-    #            function_args = json.loads(response_message.function_call.arguments)
-    #            if check_args(function_to_call, function_args) is False:
-    #                full_response = f"Sorry, I don't know how to call the function `{function_name}` with those arguments."
-    #            else:
+                function_args = json.loads(response_message.function_call.arguments)
+                if check_args(function_to_call, function_args) is False:
+                    full_response = f"Sorry, I don't know how to call the function `{function_name}` with those arguments."
+                else:
     #                # Call the function
-    #                full_response = function_to_call(**function_args)
-    #message_placeholder.markdown(full_response)
-    #st.session_state.messages.append({"role": "assistant", "content": full_response})
+                    full_response = function_to_call(**function_args)
+    message_placeholder.markdown(full_response)
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
     raise NotImplementedError
 
