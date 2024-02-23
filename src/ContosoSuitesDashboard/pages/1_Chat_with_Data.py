@@ -215,36 +215,39 @@ def recognize_from_microphone(speech_key, speech_region, speech_recognition_lang
     # Then set the speech recognition language to speech_recognition_language.
 
     # TODO: fill in code
-    # speech_config = ...
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
+    speech_config.speech_recognition_language=speech_recognition_language 
 
     # Create a microphone instance and speech recognizer.
 
     # TODO: fill in code
-    # audio_config = ...
-    # speech_recognizer = ...
+    audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
+    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
 
     # Start speech recognition
+    print("Speak into your microphone.")
+    speech_recognition_result = speech_recognizer.recognize_once_async().get()
 
     # print("Speak into your microphone.")
-    # speech_recognition_result = speech_recognizer.recognize_once_async().get()
+    speech_recognition_result = speech_recognizer.recognize_once_async().get()
 
     # Check the result
 
-    # if speech_recognition_result.reason == speechsdk.ResultReason.RecognizedSpeech:
-    #     print("Recognized: {}".format(speech_recognition_result.text))
-    #     return ...
-    # elif speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:
-    #     print("No speech could be recognized: {}".format(speech_recognition_result.no_match_details))
-    #     return ...
-    # elif speech_recognition_result.reason == speechsdk.ResultReason.Canceled:
-    #     cancellation_details = speech_recognition_result.cancellation_details
-    #     print("Speech Recognition canceled: {}".format(cancellation_details.reason))
-    #     if cancellation_details.reason == speechsdk.CancellationReason.Error:
-    #         print("Error details: {}".format(cancellation_details.error_details))
-    #         print("Did you set the speech resource key and region values?")
-    #     return ...
+    if speech_recognition_result.reason == speechsdk.ResultReason.RecognizedSpeech:
+         print("Recognized: {}".format(speech_recognition_result.text))
+         return ...
+    elif speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:
+         print("No speech could be recognized: {}".format(speech_recognition_result.no_match_details))
+         return ...
+    elif speech_recognition_result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = speech_recognition_result.cancellation_details
+        print("Speech Recognition canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+           print("Error details: {}".format(cancellation_details.error_details))
+           print("Did you set the speech resource key and region values?")
+        return None
     
-    raise NotImplementedError
+    #raise NotImplementedError
     
 
 ### All Exercises
@@ -281,7 +284,11 @@ def main():
     # so using this button will cause it to be in an awkward position after the first message.
     
     # TODO: complete this section
-    # if st.button("Speech to text"):
+    if st.button("Speech to text"):
+        speech_contents = recognize_from_microphone(speech_key, speech_region)
+        if speech_contents:
+            handle_prompt(chat_option, speech_contents)
+
 
     # Await a user message and handle the chat prompt when it comes in.
     if prompt := st.chat_input("Enter a message:"):

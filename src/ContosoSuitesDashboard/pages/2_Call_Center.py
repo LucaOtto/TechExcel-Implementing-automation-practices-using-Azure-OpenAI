@@ -32,8 +32,8 @@ language_key = config['LanguageKey']
 ### Exercise 05: Provide live audio transcription
 def create_transcription_request(audio_file, speech_key, speech_region, speech_recognition_language="en-US"):
     # Create an instance of a speech config with specified subscription key and service region.
-    # speech_config = ...
-    # TODO: set speech recognition language
+    speech_config = speechsdk.SpeechConfig(subscription=speech_key, region=speech_region)
+    speech_config.speech_recognition_language=speech_recognition_language
 
     # Prepare audio settings for the wave stream
     channels = 1
@@ -41,14 +41,17 @@ def create_transcription_request(audio_file, speech_key, speech_region, speech_r
     samples_per_second = 16000
 
     # TODO: Create audio configuration using the push stream
-    # wave_format = ...
-    # stream = ...
-    # audio_config = ...
+    wave_format = speechsdk.audio.AudioStreamFormat(samples_per_second, bits_per_sample, channels)
+    stream = speechsdk.audio.PushAudioInputStream(stream_format=wave_format)
+    audio_config = speechsdk.audio.AudioConfig(stream=stream)
 
     # TODO: use the ConversationTranscriber class to create a transcriber object
-    # transcriber = ...
-
+    transcriber = speechsdk.transcription.ConversationTranscriber(speech_config, audio_config)
     all_results = []
+
+    def handle_final_result(evt):
+        all_results.append(evt.result.text)
+
     done = False
 
     # Callback events for transcribed and stopped/cancelled states
@@ -62,17 +65,29 @@ def create_transcription_request(audio_file, speech_key, speech_region, speech_r
 
     # Subscribe to the events fired by the conversation transcriber
     # TODO: add event handlers for transcribed, session_started, session_stopped, and canceled events
+    transcriber.transcribed.connect(handle_final_result)
+    transcriber.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
+    transcriber.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
+    transcriber.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
+    # stop continuous transcription on either session stopped or canceled events
+    transcriber.session_stopped.connect(stop_cb)
+    transcriber.canceled.connect(stop_cb)
+
+    transcriber.start_transcribing_async()    
 
     # Begin the transcription process
     # transcriber.start_transcribing_async()
 
     # Read the whole wave files at once and stream it to sdk
     _, wav_data = wavfile.read(audio_file)
+    stream.write(wav_data.tobytes())
+    stream.close()
+
     # TODO: write the stream to bytes and close it when done
     while not done:
         time.sleep(.5)
 
-    # transcriber.stop_transcribing_async()
+    transcriber.stop_transcribing_async()
     return all_results
 
 def create_live_transcription_request(speech_key, speech_region, speech_recognition_language="en-US"):
@@ -350,7 +365,14 @@ def main():
     )
 
     st.write("## Simulate a call")
-
+    uploaded_file = st.file_uploader("Upload an audio file", type="wav")
+    if uploaded_file is not None and ('file_transcription' not in st.session_state or st.session_state.file_transcription is False):
+        st.audio(uploaded_file, format='audio/wav')
+        with st.spinner("Transcribing the call..."):
+            all_results = create_transcription_request(uploaded_file, speech_key, speech_region)
+            st.session_state.file_transcription_results = all_results
+            st.session_state.file_transcription = True
+        st.success("Transcription complete!")
     # TODO: Add a file uploader to the Streamlit app
     # TODO: Add a conditional based on:
     #    - If there is an uploaded file
