@@ -5,8 +5,8 @@
     "SearchEndpoint": "https://2zyyzzxzl56gu-search.search.windows.net",
     "SearchKey": "l5xnjEcD9WvROnZ0mPeOJJ9BrVUuJ1rHw8pzjtVJ6bAzSeBKaVIa",
     "SearchIndex": "resort",
-    "SpeechKey": "TODO",
-    "SpeechRegion": "TODO",
+    "SpeechKey": "bc130e9aa4154bb4b886a3e8bb8d3e30",
+    "SpeechRegion": "eastus",
     "LanguageEndpoint": "TODO",
     "LanguageKey": "TODO"
 }

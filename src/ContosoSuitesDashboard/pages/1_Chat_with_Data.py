@@ -151,7 +151,7 @@ def create_chat_completion_with_functions(deployment_name, messages):
         function_call="auto",
     )
     
-    raise NotImplementedError
+    #raise NotImplementedError
 
 def handle_chat_prompt_with_functions(prompt):
     # Echo the user's prompt to the chat window
@@ -190,7 +190,7 @@ def handle_chat_prompt_with_functions(prompt):
     message_placeholder.markdown(full_response)
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-    raise NotImplementedError
+    #raise NotImplementedError
 
 # helper method used to check if the correct arguments are provided to a function
 def check_args(function, args):
